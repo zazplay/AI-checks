@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #101316; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2e343a; border-radius: 6px; }
+  ::selection { background: #8b5cf6; color: #fff; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</helmet>
+<div style="min-height:100vh; background:radial-gradient(1200px 600px at 50% -10%, #181d21 0%, #101316 60%); padding:48px 32px 80px; font-family:'IBM Plex Sans', system-ui, sans-serif; color:#e8eaed; -webkit-font-smoothing:antialiased;">
+  <div style="max-width:960px; margin:0 auto; display:flex; flex-direction:column; gap:18px;">
+
+    <!-- App tab toggle -->
+    <div style="display:flex; align-items:center; gap:18px; margin-bottom:2px;">
+      <div style="display:flex; align-items:center; gap:9px;">
+        <div style="width:26px; height:26px; border-radius:7px; background:linear-gradient(135deg,#3b82f6,#2563eb); display:flex; align-items:center; justify-content:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        </div>
+        <span style="font-size:14px; font-weight:600; letter-spacing:-0.01em;">Invoice Processing</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:2px; padding:3px; background:#15181b; border:1px solid #2a2f34; border-radius:10px;">
+        <span style="font-size:12.5px; font-weight:500; color:#9aa1a8; padding:5px 14px; border-radius:7px;">Invoices</span>
+        <span style="font-size:12.5px; font-weight:600; color:#e8eaed; padding:5px 14px; border-radius:7px; background:#1c2125;">Settings</span>
+      </div>
+    </div>
+
+    <!-- Scenario preview bar -->
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:11px 14px; background:#13161a; border:1px dashed #2a2f34; border-radius:12px;">
+      <span style="font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; color:#6b7178; font-family:'IBM Plex Mono', monospace;">Preview scenario</span>
+      <div style="display:flex; gap:7px; flex-wrap:wrap;">
+        <sc-for list="{{ scenarioBtns }}" as="b" hint-placeholder-count="5">
+          <button style="{{ b.style }}" onClick="{{ b.onClick }}">{{ b.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- Page header -->
+    <div style="margin-top:2px; margin-bottom:2px;">
+      <div style="font-size:19px; font-weight:600; letter-spacing:-0.01em;">AI Settings</div>
+      <div style="font-size:13.5px; color:#7d858d; margin-top:4px;">Choose the AI engines, check provider keys, and tune extraction &amp; assistant behavior.</div>
+    </div>
+
+    <!-- CARD 1 — Engines -->
+    <div style="background:#15181b; border:1px solid #2a2f34; border-radius:18px; padding:22px; box-shadow:0 40px 100px -30px rgba(0,0,0,0.8);">
+      <div style="display:flex; gap:12px; align-items:flex-start; margin-bottom:18px;">
+        <div style="width:32px; height:32px; min-width:32px; border-radius:9px; background:#1c2125; border:1px solid #2a2f34; display:flex; align-items:center; justify-content:center;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7fb0f5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg>
+        </div>
+        <div>
+          <div style="font-size:15px; font-weight:600;">Engines</div>
+          <div style="font-size:12px; color:#7d858d; margin-top:2px;">Pick the model used to read invoices and to power the assistant.</div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px;">
+        <!-- Extraction engine -->
+        <div>
+          <div style="font-size:12.5px; color:#9aa1a8; font-weight:500;">Extraction engine</div>
+          <div style="font-size:11px; color:#6b7178; margin-top:3px; margin-bottom:9px;">Engine tried first on upload; others stay as fallback.</div>
+          <div style="position:relative;">
+            <div onClick="{{ toggleExtraction }}" style="display:flex; align-items:center; gap:10px; height:36px; padding:0 11px; background:#1c2125; border:1px solid #2a2f34; border-radius:10px; cursor:pointer;">
+              <div style="width:20px; height:20px; min-width:20px; border-radius:6px; background:#23292e; display:flex; align-items:center; justify-content:center;">
+                {{ extractionIcon }}
+              </div>
+              <span style="flex:1; font-size:13px; font-family:'IBM Plex Mono', monospace; color:#e8eaed; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ extractionValue }}</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7d858d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+            <sc-if value="{{ extractionOpen }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ closeDD }}" style="position:fixed; inset:0; z-index:40;"></div>
+              <div style="position:absolute; top:42px; left:0; right:0; z-index:50; background:#1c2125; border:1px solid #2a2f34; border-radius:12px; padding:6px; box-shadow:0 24px 60px -20px rgba(0,0,0,0.9);">
+                <sc-for list="{{ extractionGroups }}" as="g" hint-placeholder-count="2">
+                  <div style="padding:7px 10px 4px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:#6b7178;">{{ g.label }}</div>
+                  <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="1">
+                    <div onClick="{{ it.onSelect }}" style="{{ it.rowStyle }}">
+                      {{ it.icon }}
+                      <span style="flex:1;">{{ it.value }}</span>
+                      <sc-if value="{{ it.showCheck }}" hint-placeholder-val="{{ false }}">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7fb0f5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+          <div style="display:inline-block; margin-top:9px; padding:3px 9px; background:#13161a; border:1px solid #23282d; border-radius:999px; font-size:11px; font-family:'IBM Plex Mono', monospace; color:#cbd0d4;">{{ extractionValue }}</div>
+        </div>
+
+        <!-- Assistant engine -->
+        <div>
+          <div style="font-size:12.5px; color:#9aa1a8; font-weight:500;">Assistant engine</div>
+          <div style="font-size:11px; color:#6b7178; margin-top:3px; margin-bottom:9px;">Powers the chat assistant. Missing-key providers are disabled.</div>
+          <div style="position:relative;">
+            <div onClick="{{ toggleAssistant }}" style="display:flex; align-items:center; gap:10px; height:36px; padding:0 11px; background:#1c2125; border:1px solid #2a2f34; border-radius:10px; cursor:pointer;">
+              <div style="width:20px; height:20px; min-width:20px; border-radius:6px; background:#23292e; display:flex; align-items:center; justify-content:center;">
+                {{ assistantIcon }}
+              </div>
+              <span style="flex:1; font-size:13px; font-family:'IBM Plex Mono', monospace; color:#e8eaed; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ assistantValue }}</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7d858d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+            <sc-if value="{{ assistantOpen }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ closeDD }}" style="position:fixed; inset:0; z-index:40;"></div>
+              <div style="position:absolute; top:42px; left:0; right:0; z-index:50; background:#1c2125; border:1px solid #2a2f34; border-radius:12px; padding:6px; box-shadow:0 24px 60px -20px rgba(0,0,0,0.9);">
+                <sc-for list="{{ assistantGroups }}" as="g" hint-placeholder-count="3">
+                  <div style="padding:7px 10px 4px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:#6b7178;">{{ g.label }}</div>
+                  <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="1">
+                    <div onClick="{{ it.onSelect }}" style="{{ it.rowStyle }}">
+                      {{ it.icon }}
+                      <span style="flex:1;">{{ it.value }}</span>
+                      <sc-if value="{{ it.showDisabledTag }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size:9.5px; text-transform:uppercase; letter-spacing:0.06em; color:#6b7178; font-family:'IBM Plex Sans',sans-serif;">no key</span>
+                      </sc-if>
+                      <sc-if value="{{ it.showCheck }}" hint-placeholder-val="{{ false }}">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7fb0f5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+          <div style="display:inline-block; margin-top:9px; padding:3px 9px; background:#13161a; border:1px solid #23282d; border-radius:999px; font-size:11px; font-family:'IBM Plex Mono', monospace; color:#cbd0d4;">{{ assistantValue }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 2 — Providers -->
+    <div style="background:#15181b; border:1px solid #2a2f34; border-radius:18px; padding:22px; box-shadow:0 40px 100px -30px rgba(0,0,0,0.8);">
+      <div style="display:flex; gap:12px; align-items:flex-start; margin-bottom:6px;">
+        <div style="width:32px; height:32px; min-width:32px; border-radius:9px; background:#1c2125; border:1px solid #2a2f34; display:flex; align-items:center; justify-content:center;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e0a458" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 19 4M15 8l3 3M13 10l3 3"/></svg>
+        </div>
+        <div>
+          <div style="font-size:15px; font-weight:600;">Providers</div>
+          <div style="font-size:12px; color:#7d858d; margin-top:2px;">Verify each API key works. Quota comes from the last real request.</div>
+        </div>
+      </div>
+
+      <div>
+        <sc-for list="{{ providersList }}" as="p" hint-placeholder-count="3">
+          <div style="padding:15px 0; border-top:1px solid #23282d;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:14px;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:30px; height:30px; min-width:30px; border-radius:8px; background:#1c2125; border:1px solid #2a2f34; display:flex; align-items:center; justify-content:center;">{{ p.icon }}</div>
+                <div>
+                  <div style="font-size:13px; font-weight:600;">{{ p.name }}</div>
+                  <div style="font-size:10.5px; color:#6b7178; font-family:'IBM Plex Mono', monospace; margin-top:3px;">{{ p.env }}</div>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div style="{{ p.pillStyle }}">
+                  <sc-if value="{{ p.showSpinner }}" hint-placeholder-val="{{ false }}">
+                    <span style="display:inline-block; width:10px; height:10px; border-radius:50%; border:1.6px solid rgba(127,176,245,0.25); border-top-color:#7fb0f5; animation:spin .7s linear infinite;"></span>
+                  </sc-if>
+                  <sc-if value="{{ p.showDot }}" hint-placeholder-val="{{ true }}">
+                    <span style="{{ p.dotStyle }}"></span>
+                  </sc-if>
+                  <span>{{ p.statusLabel }}</span>
+                </div>
+                <button onClick="{{ p.onTest }}" style="display:flex; align-items:center; gap:7px; height:30px; padding:0 13px; background:#15181b; border:1px solid #2a2f34; border-radius:9px; font-size:13px; color:#cbd0d4; font-family:'IBM Plex Sans',sans-serif; cursor:pointer;" style-hover="border-color:#3b82f6; color:#7fb0f5;">
+                  <sc-if value="{{ p.showSpinner }}" hint-placeholder-val="{{ false }}">
+                    <span style="display:inline-block; width:10px; height:10px; border-radius:50%; border:1.6px solid rgba(127,176,245,0.25); border-top-color:#7fb0f5; animation:spin .7s linear infinite;"></span>
+                  </sc-if>
+                  <span>{{ p.testLabel }}</span>
+                </button>
+              </div>
+            </div>
+            <sc-if value="{{ p.showRl }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:10px; font-size:11px; font-family:'IBM Plex Mono', monospace; color:#6b7178;">{{ p.rlLine }}</div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="margin-top:14px; padding-top:14px; border-top:1px solid #23282d; font-size:11px; color:#6b7178; line-height:1.5;">Remaining quota is the last value seen on a real request. Account balance is not exposed by the provider APIs.</div>
+    </div>
+
+    <!-- CARD 3 — Behavior -->
+    <div style="background:#15181b; border:1px solid #2a2f34; border-radius:18px; padding:22px; box-shadow:0 40px 100px -30px rgba(0,0,0,0.8);">
+      <div style="display:flex; gap:12px; align-items:flex-start; margin-bottom:20px;">
+        <div style="width:32px; height:32px; min-width:32px; border-radius:9px; background:#1c2125; border:1px solid #2a2f34; display:flex; align-items:center; justify-content:center;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b9a4fb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+        </div>
+        <div>
+          <div style="font-size:15px; font-weight:600;">Behavior</div>
+          <div style="font-size:12px; color:#7d858d; margin-top:2px;">Tune how strictly invoices are accepted and what the assistant may do.</div>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:24px;">
+        <!-- Extraction strictness -->
+        <div style="display:flex; gap:24px; align-items:flex-start;">
+          <div style="flex:1;">
+            <div style="font-size:12.5px; color:#9aa1a8; font-weight:500;">Extraction strictness</div>
+            <div style="font-size:11px; color:#6b7178; margin-top:3px; margin-bottom:11px;">Higher = reject low-confidence or math-inconsistent extractions (they land in Failed).</div>
+            <div style="display:flex; gap:4px; padding:4px; background:#13161a; border:1px solid #23282d; border-radius:11px;">
+              <sc-for list="{{ strictnessSegs }}" as="s" hint-placeholder-count="3">
+                <div onClick="{{ s.onClick }}" style="{{ s.style }}">{{ s.label }}</div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="min-width:84px; text-align:right; padding-top:24px;">
+            <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:#6b7178;">Current</div>
+            <div style="font-size:13px; font-weight:600; color:#e8eaed; margin-top:3px;">{{ strictness }}</div>
+          </div>
+        </div>
+
+        <!-- Threshold slider -->
+        <div style="display:flex; gap:24px; align-items:flex-start; border-top:1px solid #23282d; padding-top:24px;">
+          <div style="flex:1;">
+            <div style="font-size:12.5px; color:#9aa1a8; font-weight:500;">&ldquo;Looks like an invoice&rdquo; threshold</div>
+            <div style="font-size:11px; color:#6b7178; margin-top:3px; margin-bottom:16px;">Below this confidence the document is flagged &lsquo;may not be an invoice&rsquo;.</div>
+            <div ref="{{ trackRef }}" onMouseDown="{{ onSliderDown }}" style="position:relative; height:16px; cursor:pointer; user-select:none;">
+              <div style="position:absolute; top:50%; left:0; right:0; height:6px; transform:translateY(-50%); background:#13161a; border:1px solid #23282d; border-radius:999px;"></div>
+              <div style="{{ sliderFillStyle }}"></div>
+              <div style="{{ thumbStyle }}"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:7px; font-size:10px; font-family:'IBM Plex Mono', monospace; color:#6b7178;">
+              <span>0.00</span><span>1.00</span>
+            </div>
+          </div>
+          <div style="min-width:84px; text-align:right; padding-top:24px;">
+            <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:#6b7178;">Current</div>
+            <div style="font-size:18px; font-weight:600; color:#b9a4fb; font-family:'IBM Plex Mono', monospace; margin-top:3px;">{{ thresholdLabel }}</div>
+          </div>
+        </div>
+
+        <!-- Chat action mode -->
+        <div style="display:flex; gap:24px; align-items:flex-start; border-top:1px solid #23282d; padding-top:24px;">
+          <div style="flex:1;">
+            <div style="font-size:12.5px; color:#9aa1a8; font-weight:500;">Chat action mode</div>
+            <div style="font-size:11px; color:#6b7178; margin-top:3px; margin-bottom:11px;">Controls whether the assistant can retry/delete/export on its own, must confirm first, or only answer.</div>
+            <div style="display:flex; gap:4px; padding:4px; background:#13161a; border:1px solid #23282d; border-radius:11px;">
+              <sc-for list="{{ chatModeSegs }}" as="c" hint-placeholder-count="3">
+                <div onClick="{{ c.onClick }}" style="{{ c.style }}">
+                  <span>{{ c.label }}</span>
+                  <sc-if value="{{ c.showPill }}" hint-placeholder-val="{{ false }}">
+                    <span style="{{ c.pillStyle }}">
+                      <sc-if value="{{ c.warn }}" hint-placeholder-val="{{ false }}">
+                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+                      </sc-if>
+                      <span style="{{ c.dotStyle }}"></span>
+                    </span>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="min-width:84px; text-align:right; padding-top:24px;">
+            <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:#6b7178;">Current</div>
+            <div style="font-size:13px; font-weight:600; color:#e8eaed; margin-top:3px;">{{ chatMode }}</div>
+          </div>
+        </div>
+
+        <!-- Throughput -->
+        <div style="border-top:1px solid #23282d; padding-top:24px;">
+          <div style="font-size:12.5px; color:#9aa1a8; font-weight:500;">Throughput</div>
+          <div style="font-size:11px; color:#6b7178; margin-top:3px; margin-bottom:12px;">Parallel workers and how many jobs may start per minute.</div>
+          <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end;">
+            <div>
+              <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:#6b7178; margin-bottom:7px;">Concurrency</div>
+              <div style="display:flex; align-items:center; gap:2px; background:#13161a; border:1px solid #23282d; border-radius:10px; padding:3px;">
+                <button onClick="{{ concMinus }}" style="width:28px; height:28px; border-radius:7px; background:#1c2125; border:1px solid #2a2f34; color:#cbd0d4; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center;">&minus;</button>
+                <span style="width:42px; text-align:center; font-size:14px; font-weight:600; font-family:'IBM Plex Mono', monospace;">{{ concurrency }}</span>
+                <button onClick="{{ concPlus }}" style="width:28px; height:28px; border-radius:7px; background:#1c2125; border:1px solid #2a2f34; color:#cbd0d4; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center;">+</button>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:#6b7178; margin-bottom:7px;">Rate limit &middot; jobs/min</div>
+              <div style="display:flex; align-items:center; gap:2px; background:#13161a; border:1px solid #23282d; border-radius:10px; padding:3px;">
+                <button onClick="{{ rateMinus }}" style="width:28px; height:28px; border-radius:7px; background:#1c2125; border:1px solid #2a2f34; color:#cbd0d4; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center;">&minus;</button>
+                <span style="width:42px; text-align:center; font-size:14px; font-weight:600; font-family:'IBM Plex Mono', monospace;">{{ rateLimit }}</span>
+                <button onClick="{{ ratePlus }}" style="width:28px; height:28px; border-radius:7px; background:#1c2125; border:1px solid #2a2f34; color:#cbd0d4; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center;">+</button>
+              </div>
+            </div>
+            <div style="font-size:10.5px; color:#e0a458; padding-bottom:6px;">Applied on next worker restart.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer action bar -->
+    <div style="position:sticky; bottom:16px; display:flex; justify-content:flex-end; align-items:center; gap:14px; padding:13px 18px; background:rgba(21,24,27,0.92); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid #2a2f34; border-radius:14px; margin-top:6px;">
+      <sc-if value="{{ dirty }}" hint-placeholder-val="{{ false }}">
+        <span style="display:flex; align-items:center; gap:7px; font-size:12px; color:#e0a458; margin-right:auto;">
+          <span style="width:6px; height:6px; border-radius:50%; background:#e0a458;"></span>Unsaved changes
+        </span>
+      </sc-if>
+      <button onClick="{{ onReset }}" style="height:38px; padding:0 16px; background:transparent; border:1px solid #2a2f34; border-radius:10px; font-size:13px; font-weight:500; color:#cbd0d4; cursor:pointer; font-family:'IBM Plex Sans',sans-serif;" style-hover="border-color:#3b4046;">Reset to defaults</button>
+      <button onClick="{{ onSave }}" style="height:38px; padding:0 20px; background:linear-gradient(135deg,#3b82f6,#2563eb); border:none; border-radius:10px; font-size:13px; font-weight:600; color:#fff; cursor:pointer; font-family:'IBM Plex Sans',sans-serif; box-shadow:0 8px 22px -10px rgba(59,130,246,0.8);" style-hover="filter:brightness(1.08);">Save changes</button>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  presets = {
+    'all-configured': {
+      claude: { status: 'configured', rl: null, testResult: 'working' },
+      gemini: { status: 'configured', rl: null, testResult: 'working' },
+      groq:   { status: 'configured', rl: null, testResult: 'working' },
+    },
+    'one-invalid': {
+      claude: { status: 'working', rl: 'requests: 48 / 50 remaining · resets in 42s', testResult: 'working' },
+      gemini: { status: 'configured', rl: null, testResult: 'working' },
+      groq:   { status: 'invalid', rl: null, testResult: 'invalid' },
+    },
+    'one-rate-limited': {
+      claude: { status: 'working', rl: 'requests: 12 / 50 remaining · resets in 51s', testResult: 'working' },
+      gemini: { status: 'ratelimited', rl: 'requests: 0 / 50 remaining · resets in 27s', testResult: 'ratelimited' },
+      groq:   { status: 'configured', rl: null, testResult: 'working' },
+    },
+    'one-missing-key': {
+      claude: { status: 'configured', rl: null, testResult: 'working' },
+      gemini: { status: 'configured', rl: null, testResult: 'working' },
+      groq:   { status: 'nokey', rl: null, testResult: 'invalid' },
+    },
+    'testing': {
+      claude: { status: 'working', rl: 'requests: 48 / 50 remaining · resets in 42s', testResult: 'working' },
+      gemini: { status: 'testing', rl: null, testResult: 'working' },
+      groq:   { status: 'configured', rl: null, testResult: 'working' },
+    },
+  };
+
+  state = {
+    scenario: 'all-configured',
+    providers: JSON.parse(JSON.stringify(this.presets['all-configured'])),
+    extractionEngine: 'claude-haiku-4-5',
+    assistantEngine: 'groq / llama-3.3-70b-versatile',
+    strictness: 'Balanced',
+    threshold: 0.50,
+    chatMode: 'Ask first',
+    concurrency: 2,
+    rateLimit: 8,
+    dirty: false,
+    openDropdown: null,
+  };
+
+  PROVIDER_META = {
+    claude: { name: 'Claude', env: 'ANTHROPIC_API_KEY' },
+    gemini: { name: 'Gemini', env: 'GEMINI_API_KEY' },
+    groq:   { name: 'Groq',   env: 'GROQ_API_KEY' },
+  };
+
+  SCENARIOS = [
+    { key: 'all-configured',  label: 'All configured' },
+    { key: 'one-invalid',     label: 'One invalid' },
+    { key: 'one-rate-limited',label: 'Rate-limited' },
+    { key: 'one-missing-key', label: 'Missing key' },
+    { key: 'testing',         label: 'Testing\u2026' },
+  ];
+
+  setScenario = (s) => {
+    this.setState({ scenario: s, providers: JSON.parse(JSON.stringify(this.presets[s])) });
+  };
+
+  testProvider = (key) => {
+    if (this.state.providers[key].status === 'testing') return;
+    const tr = (this.presets[this.state.scenario][key] || {}).testResult || 'working';
+    this.setState((st) => ({
+      providers: { ...st.providers, [key]: { ...st.providers[key], status: 'testing', rl: null } },
+    }));
+    setTimeout(() => {
+      this.setState((st) => {
+        let rl = null;
+        if (tr === 'working') rl = 'requests: 48 / 50 remaining \u00b7 resets in 42s';
+        else if (tr === 'ratelimited') rl = 'requests: 0 / 50 remaining \u00b7 resets in 27s';
+        return { providers: { ...st.providers, [key]: { ...st.providers[key], status: tr, rl } } };
+      });
+    }, 1300);
+  };
+
+  toggleExtraction = () => this.setState((st) => ({ openDropdown: st.openDropdown === 'extraction' ? null : 'extraction' }));
+  toggleAssistant = () => this.setState((st) => ({ openDropdown: st.openDropdown === 'assistant' ? null : 'assistant' }));
+  closeDD = () => this.setState({ openDropdown: null });
+
+  selectEngine = (type, value) => {
+    const k = type === 'extraction' ? 'extractionEngine' : 'assistantEngine';
+    this.setState({ [k]: value, openDropdown: null, dirty: true });
+  };
+
+  setStrictness = (v) => this.setState({ strictness: v, dirty: true });
+  setChatMode = (v) => this.setState({ chatMode: v, dirty: true });
+  concMinus = () => this.setState((st) => ({ concurrency: Math.max(1, st.concurrency - 1), dirty: true }));
+  concPlus = () => this.setState((st) => ({ concurrency: Math.min(8, st.concurrency + 1), dirty: true }));
+  rateMinus = () => this.setState((st) => ({ rateLimit: Math.max(1, st.rateLimit - 1), dirty: true }));
+  ratePlus = () => this.setState((st) => ({ rateLimit: st.rateLimit + 1, dirty: true }));
+  onSave = () => this.setState({ dirty: false });
+  onReset = () => this.setState({
+    extractionEngine: 'claude-haiku-4-5',
+    assistantEngine: 'groq / llama-3.3-70b-versatile',
+    strictness: 'Balanced', threshold: 0.50, chatMode: 'Ask first',
+    concurrency: 2, rateLimit: 8, dirty: false,
+  });
+
+  trackRef = (el) => { this._track = el; };
+  onSliderDown = (e) => {
+    const move = (ev) => {
+      if (!this._track) return;
+      const r = this._track.getBoundingClientRect();
+      let f = (ev.clientX - r.left) / r.width;
+      f = Math.max(0, Math.min(1, f));
+      f = Math.round(f / 0.05) * 0.05;
+      this.setState({ threshold: f, dirty: true });
+    };
+    move(e);
+    const up = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  };
+
+  iconEl(provider, size) {
+    const C = { claude: '#d97757', gemini: '#4f8ff7', groq: '#f55036' }[provider] || '#9aa1a8';
+    const h = React.createElement;
+    const common = { width: size, height: size, viewBox: '0 0 24 24', style: { display: 'block', flex: '0 0 auto' } };
+    if (provider === 'gemini') {
+      return h('svg', { ...common, fill: C }, h('path', { d: 'M12 2 C12 7.5 16.5 12 22 12 C16.5 12 12 16.5 12 22 C12 16.5 7.5 12 2 12 C7.5 12 12 7.5 12 2 Z' }));
+    }
+    if (provider === 'groq') {
+      return h('svg', { ...common, fill: 'none', stroke: C, strokeWidth: 2.2 },
+        h('rect', { x: 3.5, y: 3.5, width: 17, height: 17, rx: 5 }),
+        h('circle', { cx: 12, cy: 12, r: 3, fill: C, stroke: 'none' }));
+    }
+    return h('svg', { ...common, fill: 'none', stroke: C, strokeWidth: 2, strokeLinecap: 'round' },
+      h('path', { d: 'M12 3V21' }), h('path', { d: 'M3 12H21' }),
+      h('path', { d: 'M5.6 5.6 18.4 18.4' }), h('path', { d: 'M18.4 5.6 5.6 18.4' }));
+  }
+
+  valueProvider(value) {
+    let v = value || '';
+    if (v.indexOf('/') !== -1) v = v.split('/')[0].trim();
+    if (v.indexOf('claude') === 0) return 'claude';
+    if (v.indexOf('gemini') === 0) return 'gemini';
+    if (v.indexOf('groq') === 0) return 'groq';
+    return 'claude';
+  }
+
+  statusMeta(status) {
+    const base = {
+      display: 'inline-flex', alignItems: 'center', gap: '7px',
+      padding: '4px 10px', borderRadius: '999px', fontSize: '10px',
+      fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
+      fontFamily: "'IBM Plex Sans', sans-serif", whiteSpace: 'nowrap',
+    };
+    const map = {
+      nokey:       { label: 'No key',       bg: '#1c2125', border: '#2a2f34', dot: '#6b7178', text: '#9aa1a8' },
+      configured:  { label: 'Configured',   bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.3)', dot: '#3b82f6', text: '#7fb0f5' },
+      working:     { label: 'Working',      bg: 'rgba(52,211,153,0.12)', border: 'rgba(52,211,153,0.28)', dot: '#34d399', text: '#7fe7b8', glow: true },
+      invalid:     { label: 'Invalid key',  bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.32)', dot: '#ef4444', text: '#f08886' },
+      ratelimited: { label: 'Rate limited', bg: 'rgba(224,164,88,0.12)', border: 'rgba(224,164,88,0.3)', dot: '#e0a458', text: '#e0a458' },
+      testing:     { label: 'Testing\u2026', bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.3)', dot: '#3b82f6', text: '#7fb0f5' },
+    };
+    const m = map[status] || map.nokey;
+    return {
+      label: m.label,
+      pillStyle: { ...base, background: m.bg, border: '1px solid ' + m.border, color: m.text },
+      dotStyle: { display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: m.dot, boxShadow: m.glow ? '0 0 8px ' + m.dot : 'none' },
+    };
+  }
+
+  buildGroups(groups, selectedValue, type) {
+    return groups.map((g) => ({
+      label: g.label,
+      items: g.items.map((it) => {
+        const disabled = this.state.providers[it.provider] && this.state.providers[it.provider].status === 'nokey';
+        const selected = it.value === selectedValue;
+        return {
+          value: it.value,
+          icon: this.iconEl(it.provider, 16),
+          showCheck: selected && !disabled,
+          showDisabledTag: !!disabled,
+          onSelect: disabled ? (() => {}) : (() => this.selectEngine(type, it.value)),
+          rowStyle: {
+            display: 'flex', alignItems: 'center', gap: '10px',
+            padding: '8px 11px', borderRadius: '8px',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            opacity: disabled ? 0.4 : 1,
+            background: (selected && !disabled) ? '#23292e' : 'transparent',
+            fontSize: '13px', fontFamily: "'IBM Plex Mono', monospace",
+            color: (selected && !disabled) ? '#e8eaed' : '#cbd0d4',
+          },
+        };
+      }),
+    }));
+  }
+
+  renderVals() {
+    const st = this.state;
+
+    const scenarioBtns = this.SCENARIOS.map((s) => {
+      const active = st.scenario === s.key;
+      return {
+        label: s.label,
+        onClick: () => this.setScenario(s.key),
+        style: {
+          padding: '6px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: 600,
+          cursor: 'pointer', fontFamily: "'IBM Plex Sans', sans-serif", transition: 'all .15s',
+          background: active ? 'rgba(59,130,246,0.14)' : '#1c2125',
+          border: '1px solid ' + (active ? 'rgba(59,130,246,0.4)' : '#2a2f34'),
+          color: active ? '#7fb0f5' : '#9aa1a8',
+        },
+      };
+    });
+
+    const providersList = ['claude', 'gemini', 'groq'].map((key) => {
+      const p = st.providers[key];
+      const meta = this.statusMeta(p.status);
+      const testing = p.status === 'testing';
+      return {
+        name: this.PROVIDER_META[key].name,
+        env: this.PROVIDER_META[key].env,
+        icon: this.iconEl(key, 17),
+        statusLabel: meta.label,
+        pillStyle: meta.pillStyle,
+        dotStyle: meta.dotStyle,
+        showSpinner: testing,
+        showDot: !testing,
+        testLabel: testing ? 'Testing\u2026' : 'Test',
+        onTest: () => this.testProvider(key),
+        showRl: !!p.rl,
+        rlLine: p.rl || '',
+      };
+    });
+
+    const extractionGroups = this.buildGroups([
+      { label: 'Claude', items: [{ value: 'claude-haiku-4-5', provider: 'claude' }] },
+      { label: 'Gemini', items: [{ value: 'gemini-2.5-flash', provider: 'gemini' }, { value: 'gemini-2.5-flash-lite', provider: 'gemini' }] },
+    ], st.extractionEngine, 'extraction');
+
+    const assistantGroups = this.buildGroups([
+      { label: 'Gemini', items: [{ value: 'gemini / gemini-2.5-flash', provider: 'gemini' }] },
+      { label: 'Groq (big free quota)', items: [{ value: 'groq / llama-3.3-70b-versatile', provider: 'groq' }] },
+      { label: 'Claude (Haiku)', items: [{ value: 'claude / claude-haiku-4-5', provider: 'claude' }] },
+    ], st.assistantEngine, 'assistant');
+
+    const segBase = {
+      flex: 1, textAlign: 'center', padding: '8px 6px', borderRadius: '8px',
+      fontSize: '12.5px', fontWeight: 500, cursor: 'pointer', userSelect: 'none',
+      transition: 'all .12s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
+    };
+    const strictnessSegs = ['Lenient', 'Balanced', 'Strict'].map((label) => {
+      const active = st.strictness === label;
+      return {
+        label, onClick: () => this.setStrictness(label),
+        style: { ...segBase, background: active ? '#23292e' : 'transparent', color: active ? '#e8eaed' : '#7d858d' },
+      };
+    });
+
+    const chatColors = {
+      'Read-only':  { dot: '#6b7178', bg: 'rgba(107,113,120,0.15)', border: '#3b4046' },
+      'Ask first':  { dot: '#3b82f6', bg: 'rgba(59,130,246,0.16)', border: 'rgba(59,130,246,0.4)' },
+      'Autonomous': { dot: '#e0a458', bg: 'rgba(224,164,88,0.16)', border: 'rgba(224,164,88,0.4)' },
+    };
+    const chatModeSegs = ['Read-only', 'Ask first', 'Autonomous'].map((label) => {
+      const active = st.chatMode === label;
+      const c = chatColors[label];
+      return {
+        label, onClick: () => this.setChatMode(label),
+        warn: label === 'Autonomous',
+        showPill: active,
+        style: { ...segBase, background: active ? '#23292e' : 'transparent', color: active ? '#e8eaed' : '#7d858d' },
+        pillStyle: {
+          display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 6px',
+          borderRadius: '999px', background: c.bg, border: '1px solid ' + c.border, color: c.dot,
+        },
+        dotStyle: { display: 'inline-block', width: '5px', height: '5px', borderRadius: '50%', background: c.dot },
+      };
+    });
+
+    const pct = (st.threshold * 100).toFixed(0) + '%';
+    const sliderFillStyle = {
+      position: 'absolute', top: '50%', left: 0, height: '6px', width: pct,
+      transform: 'translateY(-50%)', borderRadius: '999px',
+      background: 'linear-gradient(90deg,#3b82f6,#8b5cf6)',
+    };
+    const thumbStyle = {
+      position: 'absolute', top: '50%', left: pct, transform: 'translate(-50%,-50%)',
+      width: '16px', height: '16px', borderRadius: '50%', background: '#fff',
+      boxShadow: '0 2px 7px rgba(0,0,0,0.55)', cursor: 'grab',
+    };
+
+    return {
+      scenarioBtns,
+      extractionValue: st.extractionEngine,
+      assistantValue: st.assistantEngine,
+      extractionIcon: this.iconEl(this.valueProvider(st.extractionEngine), 13),
+      assistantIcon: this.iconEl(this.valueProvider(st.assistantEngine), 13),
+      extractionOpen: st.openDropdown === 'extraction',
+      assistantOpen: st.openDropdown === 'assistant',
+      toggleExtraction: this.toggleExtraction,
+      toggleAssistant: this.toggleAssistant,
+      closeDD: this.closeDD,
+      extractionGroups, assistantGroups,
+      providersList,
+      strictness: st.strictness, strictnessSegs,
+      chatMode: st.chatMode, chatModeSegs,
+      threshold: st.threshold, thresholdLabel: st.threshold.toFixed(2),
+      sliderFillStyle, thumbStyle,
+      trackRef: this.trackRef, onSliderDown: this.onSliderDown,
+      concurrency: st.concurrency, rateLimit: st.rateLimit,
+      concMinus: this.concMinus, concPlus: this.concPlus,
+      rateMinus: this.rateMinus, ratePlus: this.ratePlus,
+      dirty: st.dirty, onReset: this.onReset, onSave: this.onSave,
+    };
+  }
+}
+</script>
+</body>
+</html>

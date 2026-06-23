@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{background:#0e1013;font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#e8eaed;}
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:#2e343a;border-radius:6px;}
+  ::-webkit-scrollbar-thumb:hover{background:#3a424a;}
+  ::selection{background:#8b5cf6;color:#fff;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @keyframes shimmer{0%{background-position:-360px 0;}100%{background-position:360px 0;}}
+  @keyframes scanY{0%{top:0;opacity:0;}10%{opacity:1;}90%{opacity:1;}100%{top:100%;opacity:0;}}
+  @keyframes floatUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes pulseDot{0%,100%{opacity:1;}50%{opacity:.35;}}
+  @keyframes barStripes{from{background-position:0 0;}to{background-position:32px 0;}}
+  .skel{background:linear-gradient(90deg,#1a1e22 0%,#23282d 50%,#1a1e22 100%);background-size:720px 100%;animation:shimmer 1.4s linear infinite;border-radius:6px;}
+  .fade-in{animation:floatUp .4s ease both;}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:radial-gradient(1100px 560px at 50% -8%, #181d22 0%, #0e1013 62%);display:flex;flex-direction:column;align-items:center;padding:40px 24px 80px;">
+
+  <!-- demo control strip -->
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:30px;padding:8px 10px;background:rgba(21,24,27,0.8);border:1px solid #23282d;border-radius:13px;backdrop-filter:blur(8px);">
+    <span style="font-size:11px;font-weight:600;letter-spacing:0.08em;color:#6b7178;text-transform:uppercase;padding:0 8px;">Demo state</span>
+    <button onClick="{{ doReplay }}" style="appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:9px;background:linear-gradient(135deg,#3b82f6,#2f6fd6);border:none;color:#fff;font-size:12.5px;font-weight:600;font-family:inherit;transition:.15s;" style-hover="filter:brightness(1.1);">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v4h-4"/></svg>Replay flow</button>
+    <div style="width:1px;height:20px;background:#2a2f34;margin:0 2px;"></div>
+    <button onClick="{{ goUpload }}" style="{{ pillUpload }}">Empty</button>
+    <button onClick="{{ goUploading }}" style="{{ pillUploading }}">Uploading</button>
+    <button onClick="{{ goProcessing }}" style="{{ pillProcessing }}">Processing</button>
+    <button onClick="{{ goCompleted }}" style="{{ pillCompleted }}">Completed</button>
+    <button onClick="{{ goError }}" style="{{ pillError }}">Error</button>
+  </div>
+
+  <!-- ============ MODAL ============ -->
+  <div style="width:1000px;max-width:100%;background:#15181b;border:1px solid #2a2f34;border-radius:18px;box-shadow:0 40px 100px -24px rgba(0,0,0,0.8);overflow:hidden;">
+
+    <!-- header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid #23282d;">
+      <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+        <div style="font-size:16px;font-weight:600;flex-shrink:0;">Invoice details</div>
+        <!-- status badge -->
+        <div style="display:inline-flex;align-items:center;gap:7px;padding:4px 11px;border-radius:999px;font-size:10.5px;font-weight:600;letter-spacing:0.07em;{{ badgeStyle }}">
+          <span style="width:6px;height:6px;border-radius:50%;{{ badgeDotStyle }}"></span>{{ badgeLabel }}</div>
+      </div>
+      <button style="appearance:none;cursor:pointer;width:32px;height:32px;border-radius:9px;background:#1c2125;border:1px solid #2a2f34;color:#9aa1a8;display:flex;align-items:center;justify-content:center;transition:.15s;flex-shrink:0;" style-hover="background:#23292e;color:#e8eaed;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:340px 1fr;min-height:520px;">
+
+      <!-- ============ LEFT RAIL ============ -->
+      <div style="padding:22px;border-right:1px solid #23282d;background:#13161a;display:flex;flex-direction:column;">
+
+        <!-- PREVIEW AREA -->
+        <div style="position:relative;border-radius:12px;overflow:hidden;border:1px solid #2a2f34;min-height:268px;display:flex;flex-direction:column;{{ previewWrapStyle }}">
+
+          <!-- empty dropzone -->
+          <sc-if value="{{ isUpload }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:28px;border:2px dashed #2e343a;border-radius:12px;text-align:center;background:#13161a;">
+              <div style="width:54px;height:54px;border-radius:14px;background:#1c2125;border:1px solid #2a2f34;display:flex;align-items:center;justify-content:center;color:#7d858d;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M5 16v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3"/></svg></div>
+              <div><div style="font-size:14px;font-weight:600;">Drop a PDF here</div><div style="font-size:12px;color:#7d858d;margin-top:3px;">or click to browse · max 20 MB</div></div>
+              <button onClick="{{ startFlow }}" style="appearance:none;cursor:pointer;padding:8px 16px;border-radius:9px;background:#1c2125;border:1px solid #2a2f34;color:#cbd0d4;font-size:12.5px;font-weight:600;font-family:inherit;transition:.15s;" style-hover="background:#23292e;border-color:#3b82f6;color:#fff;">Choose file</button>
+            </div>
+          </sc-if>
+
+          <!-- paper preview (uploading / processing / completed / error) -->
+          <sc-if value="{{ showPaper }}" hint-placeholder-val="{{ true }}">
+            <div style="position:relative;flex:1;background:#f4f2ec;color:#2a2a28;transition:filter .4s,opacity .4s;{{ paperInnerStyle }}">
+              <div style="padding:16px 16px 14px;">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                  <div><div style="font-size:8px;letter-spacing:0.1em;color:#9b978c;">FROM</div><div style="font-size:9px;font-weight:700;margin-top:2px;">Tinerfe Supplies S.L.</div><div style="font-size:7px;color:#8a8678;line-height:1.5;margin-top:2px;">Calle Velázquez 14<br/>38670 Adeje · Spain</div></div>
+                  <div style="text-align:right;"><div style="font-size:15px;font-weight:800;color:#1d6b4a;letter-spacing:0.04em;">INVOICE</div><div style="font-size:7px;color:#8a8678;margin-top:2px;">No. INV-50923</div></div>
+                </div>
+                <div style="height:1px;background:#ddd9cd;margin:11px 0;"></div>
+                <div style="font-size:7px;color:#9b978c;">BILL TO</div>
+                <div style="font-size:8px;font-weight:600;margin-top:2px;">Greenfield Retail BV</div>
+                <div style="margin-top:11px;border:1px solid #e1ddd1;border-radius:5px;overflow:hidden;">
+                  <div style="display:flex;background:#1d6b4a;color:#fff;font-size:6.5px;font-weight:600;padding:4px 7px;"><div style="flex:1;">Description</div><div style="width:34px;text-align:right;">Amount</div></div>
+                  <div style="display:flex;font-size:6.5px;padding:4px 7px;border-top:1px solid #ece9df;"><div style="flex:1;">Self-service terminal touch panel</div><div style="width:34px;text-align:right;">387.36</div></div>
+                  <div style="display:flex;font-size:6.5px;padding:4px 7px;border-top:1px solid #ece9df;background:#faf8f2;"><div style="flex:1;">Thermal receipt printer, 80mm</div><div style="width:34px;text-align:right;">681.38</div></div>
+                  <div style="display:flex;font-size:6.5px;padding:4px 7px;border-top:1px solid #ece9df;"><div style="flex:1;">RFID reader 13.56 MHz, USB</div><div style="width:34px;text-align:right;">82.92</div></div>
+                </div>
+                <div style="display:flex;justify-content:flex-end;gap:14px;font-size:7px;margin-top:8px;"><span style="color:#9b978c;">TOTAL</span><span style="font-weight:700;">€1,379.44</span></div>
+              </div>
+
+              <!-- scanning sweep (processing only) -->
+              <sc-if value="{{ isProcessing }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;left:0;right:0;height:48px;pointer-events:none;background:linear-gradient(180deg,rgba(59,130,246,0) 0%,rgba(59,130,246,0.28) 50%,rgba(59,130,246,0) 100%);box-shadow:0 0 18px rgba(59,130,246,0.5);animation:scanY 1.8s ease-in-out infinite;"></div>
+              </sc-if>
+            </div>
+
+            <!-- uploading overlay -->
+            <sc-if value="{{ isUploading }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;inset:0;background:rgba(14,16,19,0.72);backdrop-filter:blur(2px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:30px;">
+                <div style="width:42px;height:42px;border-radius:50%;border:3px solid #232a31;border-top-color:#3b82f6;animation:spin .8s linear infinite;"></div>
+                <div style="font-size:13px;font-weight:600;color:#e8eaed;">Uploading…</div>
+                <div style="width:80%;max-width:220px;">
+                  <div style="height:7px;border-radius:999px;background:#1c2125;overflow:hidden;border:1px solid #23282d;">
+                    <div style="height:100%;border-radius:999px;background:linear-gradient(90deg,#3b82f6,#34d399);transition:width .12s linear;{{ uploadBarStyle }}"></div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;margin-top:7px;font-size:11px;color:#9aa1a8;font-family:'IBM Plex Mono',monospace;"><span>{{ uploadPctLabel }}</span><span>{{ uploadSizeLabel }}</span></div>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- error overlay -->
+            <sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;inset:0;background:rgba(14,16,19,0.55);display:flex;align-items:center;justify-content:center;">
+                <div style="width:46px;height:46px;border-radius:50%;background:rgba(239,100,97,0.16);border:1px solid rgba(239,100,97,0.4);display:flex;align-items:center;justify-content:center;color:#ef6461;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
+              </div>
+            </sc-if>
+          </sc-if>
+        </div>
+
+        <!-- file meta line -->
+        <sc-if value="{{ showFileMeta }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;align-items:center;gap:10px;margin-top:14px;">
+            <div style="width:32px;height:32px;border-radius:9px;background:#1c2125;border:1px solid #2a2f34;display:flex;align-items:center;justify-content:center;color:#ef6461;flex-shrink:0;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/></svg></div>
+            <div style="min-width:0;flex:1;"><div style="font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">05_pdf_scanned_faded.pdf</div><div style="font-size:11px;color:#7d858d;font-family:'IBM Plex Mono',monospace;">75.8 KB · application/pdf</div></div>
+          </div>
+        </sc-if>
+
+        <!-- action buttons (completed only) -->
+        <sc-if value="{{ isCompleted }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:8px;margin-top:12px;">
+            <button style="appearance:none;cursor:pointer;flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px;border-radius:9px;background:#1c2125;border:1px solid #2a2f34;color:#cbd0d4;font-size:12.5px;font-weight:500;font-family:inherit;transition:.15s;" style-hover="background:#23292e;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>Preview</button>
+            <button style="appearance:none;cursor:pointer;flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px;border-radius:9px;background:#1c2125;border:1px solid #2a2f34;color:#cbd0d4;font-size:12.5px;font-weight:500;font-family:inherit;transition:.15s;" style-hover="background:#23292e;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 5 5-5M5 21h14"/></svg>Download</button>
+          </div>
+        </sc-if>
+
+        <div style="flex:1;"></div>
+
+        <!-- timeline -->
+        <div style="height:1px;background:#23282d;margin:18px 0;"></div>
+        <div style="position:relative;padding-left:6px;">
+          <div style="position:absolute;left:14px;top:6px;bottom:18px;width:2px;background:#23282d;"></div>
+          <div style="position:absolute;left:14px;top:6px;width:2px;background:linear-gradient(#3b82f6,#34d399);transition:height .4s;{{ tlFillStyle }}"></div>
+
+          <div style="display:flex;gap:13px;margin-bottom:16px;position:relative;align-items:flex-start;">
+            <div style="width:18px;height:18px;border-radius:50%;border:3px solid #13161a;flex-shrink:0;z-index:1;margin-top:1px;{{ tlDot1 }}"></div>
+            <div><div style="font-size:13px;font-weight:600;{{ tlText1 }}">Uploaded</div><div style="font-size:11px;color:#7d858d;font-family:'IBM Plex Mono',monospace;">{{ tlTime1 }}</div></div>
+          </div>
+          <div style="display:flex;gap:13px;margin-bottom:16px;position:relative;align-items:flex-start;">
+            <div style="width:18px;height:18px;border-radius:50%;border:3px solid #13161a;flex-shrink:0;z-index:1;margin-top:1px;{{ tlDot2 }}"></div>
+            <div><div style="font-size:13px;font-weight:600;{{ tlText2 }}">Processing</div><div style="font-size:11px;color:#7d858d;font-family:'IBM Plex Mono',monospace;">{{ tlTime2 }}</div></div>
+          </div>
+          <div style="display:flex;gap:13px;position:relative;align-items:flex-start;">
+            <div style="width:18px;height:18px;border-radius:50%;border:3px solid #13161a;flex-shrink:0;z-index:1;margin-top:1px;{{ tlDot3 }}"></div>
+            <div><div style="font-size:13px;font-weight:600;{{ tlText3 }}">{{ tlLabel3 }}</div><div style="font-size:11px;color:#7d858d;font-family:'IBM Plex Mono',monospace;">{{ tlTime3 }}</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ RIGHT PANEL ============ -->
+      <div style="padding:22px;display:flex;flex-direction:column;">
+
+        <!-- EMPTY -->
+        <sc-if value="{{ isUpload }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;color:#6b7178;">
+            <div style="width:48px;height:48px;border-radius:13px;background:#13161a;border:1px solid #23282d;display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12h8M8 8h5M8 16h6"/></svg></div>
+            <div style="font-size:14px;font-weight:600;color:#9aa1a8;">No document yet</div>
+            <div style="font-size:12.5px;max-width:260px;line-height:1.5;">Upload a PDF and the extracted invoice fields will appear here automatically.</div>
+          </div>
+        </sc-if>
+
+        <!-- UPLOADING -->
+        <sc-if value="{{ isUploading }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;"><div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;animation:pulseDot 1.1s ease-in-out infinite;"></div><div style="font-size:13px;font-weight:600;color:#cbd0d4;">Receiving file…</div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 18px;">
+              <div><div class="skel" style="height:9px;width:50%;margin-bottom:8px;"></div><div class="skel" style="height:15px;width:85%;"></div></div>
+              <div><div class="skel" style="height:9px;width:42%;margin-bottom:8px;"></div><div class="skel" style="height:15px;width:70%;"></div></div>
+              <div><div class="skel" style="height:9px;width:46%;margin-bottom:8px;"></div><div class="skel" style="height:15px;width:75%;"></div></div>
+              <div><div class="skel" style="height:9px;width:40%;margin-bottom:8px;"></div><div class="skel" style="height:15px;width:60%;"></div></div>
+            </div>
+            <div class="skel" style="height:54px;width:100%;margin-top:20px;border-radius:11px;"></div>
+            <div class="skel" style="height:120px;width:100%;margin-top:18px;border-radius:11px;"></div>
+          </div>
+        </sc-if>
+
+        <!-- PROCESSING -->
+        <sc-if value="{{ isProcessing }}" hint-placeholder-val="{{ true }}">
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <div style="display:flex;align-items:center;gap:10px;"><div style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#8b5cf6,#c026d3);display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.7 5.8L19.5 9l-5.8 1.2L12 16l-1.7-5.8L4.5 9l5.8-1.2z"/></svg></div><div><div style="font-size:14px;font-weight:600;">Extracting data</div><div style="font-size:11.5px;color:#7d858d;font-family:'IBM Plex Mono',monospace;">claude-haiku-4-5</div></div></div>
+              <div style="font-size:11.5px;color:#b9a4fb;font-family:'IBM Plex Mono',monospace;">{{ procPctLabel }}</div>
+            </div>
+
+            <!-- thin progress -->
+            <div style="height:4px;border-radius:999px;background:#1c2125;overflow:hidden;margin-bottom:20px;"><div style="height:100%;border-radius:999px;background:linear-gradient(90deg,#8b5cf6,#c026d3);transition:width .4s;{{ procBarStyle }}"></div></div>
+
+            <!-- live steps (React element) -->
+            {{ processingSteps }}
+
+            <!-- skeleton of upcoming data -->
+            <div style="height:1px;background:#1e2327;margin:20px 0 18px;"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 18px;opacity:.6;">
+              <div><div class="skel" style="height:9px;width:48%;margin-bottom:8px;"></div><div class="skel" style="height:14px;width:82%;"></div></div>
+              <div><div class="skel" style="height:9px;width:40%;margin-bottom:8px;"></div><div class="skel" style="height:14px;width:66%;"></div></div>
+            </div>
+            <div class="skel" style="height:50px;width:100%;margin-top:16px;border-radius:11px;opacity:.6;"></div>
+          </div>
+        </sc-if>
+
+        <!-- ERROR -->
+        <sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;">
+            <div style="width:52px;height:52px;border-radius:14px;background:rgba(239,100,97,0.13);border:1px solid rgba(239,100,97,0.36);display:flex;align-items:center;justify-content:center;color:#ef6461;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
+            <div><div style="font-size:15px;font-weight:600;">Extraction failed</div><div style="font-size:12.5px;color:#9aa1a8;max-width:300px;line-height:1.55;margin-top:5px;">We couldn't read this document — it may be too faded or password-protected. Re-run the extraction or try a clearer scan.</div></div>
+            <div style="font-size:11px;color:#646b72;font-family:'IBM Plex Mono',monospace;background:#13161a;border:1px solid #23282d;border-radius:8px;padding:6px 11px;">ERR_OCR_LOW_CONFIDENCE · attempt 2</div>
+            <div style="display:flex;gap:10px;margin-top:4px;">
+              <button onClick="{{ retry }}" style="appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#2f6fd6);border:none;color:#fff;font-size:13px;font-weight:600;font-family:inherit;transition:.15s;" style-hover="filter:brightness(1.1);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v4h-4"/></svg>Retry extraction</button>
+              <button style="appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;background:#1c2125;border:1px solid #2a2f34;color:#cbd0d4;font-size:13px;font-weight:500;font-family:inherit;transition:.15s;" style-hover="background:#23292e;">Enter manually</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- COMPLETED -->
+        <sc-if value="{{ isCompleted }}" hint-placeholder-val="{{ false }}">
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <div style="font-size:13px;font-weight:600;color:#cbd0d4;">Extracted data</div>
+              <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.25);color:#b9a4fb;font-size:10px;font-weight:600;letter-spacing:0.05em;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.7 5.8L19.5 9l-5.8 1.2L12 16l-1.7-5.8L4.5 9l5.8-1.2z"/></svg>claude-haiku-4-5</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 18px;">
+              <div><div style="font-size:10px;font-weight:600;letter-spacing:0.1em;color:#6b7178;text-transform:uppercase;margin-bottom:4px;">Vendor</div><div style="font-size:14px;font-weight:500;">Tinerfe Supplies S.L.</div></div>
+              <div><div style="font-size:10px;font-weight:600;letter-spacing:0.1em;color:#6b7178;text-transform:uppercase;margin-bottom:4px;">Invoice #</div><div style="font-size:14px;font-weight:500;font-family:'IBM Plex Mono',monospace;">INV-50923</div></div>
+              <div><div style="font-size:10px;font-weight:600;letter-spacing:0.1em;color:#6b7178;text-transform:uppercase;margin-bottom:4px;">Invoice date</div><div style="font-size:14px;font-weight:500;">25 Oct 2025</div></div>
+              <div><div style="font-size:10px;font-weight:600;letter-spacing:0.1em;color:#6b7178;text-transform:uppercase;margin-bottom:4px;">Due date</div><div style="font-size:14px;font-weight:500;">08 Nov 2025</div></div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:18px;">
+              <div style="flex:1;padding:11px 13px;background:#13161a;border:1px solid #23282d;border-radius:11px;"><div style="font-size:10px;font-weight:600;letter-spacing:0.06em;color:#6b7178;text-transform:uppercase;">Subtotal</div><div style="font-size:15px;font-weight:600;font-family:'IBM Plex Mono',monospace;margin-top:4px;">€1,289.20</div></div>
+              <div style="flex:1;padding:11px 13px;background:#13161a;border:1px solid #23282d;border-radius:11px;"><div style="font-size:10px;font-weight:600;letter-spacing:0.06em;color:#6b7178;text-transform:uppercase;">Tax</div><div style="font-size:15px;font-weight:600;font-family:'IBM Plex Mono',monospace;margin-top:4px;">€90.24</div></div>
+              <div style="flex:1.2;padding:11px 13px;background:linear-gradient(135deg,rgba(52,211,153,0.13),rgba(52,211,153,0.03));border:1px solid rgba(52,211,153,0.3);border-radius:11px;"><div style="font-size:10px;font-weight:600;letter-spacing:0.06em;color:#5fcfa0;text-transform:uppercase;">Total EUR</div><div style="font-size:18px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#7fe7b8;margin-top:3px;">€1,379.44</div></div>
+            </div>
+            <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;color:#6b7178;text-transform:uppercase;margin:20px 0 9px;">Line items (5)</div>
+            <div style="border:1px solid #23282d;border-radius:11px;overflow:hidden;">
+              <div style="display:grid;grid-template-columns:1fr 36px 84px;gap:6px;padding:9px 14px;background:#1b1f23;font-size:10.5px;font-weight:600;color:#9aa1a8;"><div>Description</div><div style="text-align:right;">Qty</div><div style="text-align:right;">Amount</div></div>
+              <div style="display:grid;grid-template-columns:1fr 36px 84px;gap:6px;padding:10px 14px;border-top:1px solid #1e2327;font-size:12.5px;"><div>Self-service terminal touch panel 15.6"</div><div style="text-align:right;font-family:'IBM Plex Mono',monospace;color:#9aa1a8;">2</div><div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;">€387.36</div></div>
+              <div style="display:grid;grid-template-columns:1fr 36px 84px;gap:6px;padding:10px 14px;border-top:1px solid #1e2327;font-size:12.5px;background:#13161a;"><div>Stainless steel mounting bracket, 120mm</div><div style="text-align:right;font-family:'IBM Plex Mono',monospace;color:#9aa1a8;">6</div><div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;">€43.38</div></div>
+              <div style="display:grid;grid-template-columns:1fr 36px 84px;gap:6px;padding:10px 14px;border-top:1px solid #1e2327;font-size:12.5px;"><div>Thermal receipt printer, 80mm</div><div style="text-align:right;font-family:'IBM Plex Mono',monospace;color:#9aa1a8;">7</div><div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;">€681.38</div></div>
+              <div style="display:grid;grid-template-columns:1fr 36px 84px;gap:6px;padding:10px 14px;border-top:1px solid #1e2327;font-size:12.5px;background:#13161a;"><div>Cable gland set M12:M20 (assorted, 50 pcs)</div><div style="text-align:right;font-family:'IBM Plex Mono',monospace;color:#9aa1a8;">8</div><div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;">€94.16</div></div>
+              <div style="display:grid;grid-template-columns:1fr 36px 84px;gap:6px;padding:10px 14px;border-top:1px solid #1e2327;font-size:12.5px;"><div>RFID reader 13.56 MHz, USB</div><div style="text-align:right;font-family:'IBM Plex Mono',monospace;color:#9aa1a8;">4</div><div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;">€82.92</div></div>
+            </div>
+            <button style="appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;margin-top:18px;padding:10px 16px;border-radius:10px;background:linear-gradient(135deg,#8b5cf6,#c026d3);border:none;color:#fff;font-size:13px;font-weight:600;font-family:inherit;box-shadow:0 8px 24px -8px rgba(168,85,247,0.6);transition:.15s;" style-hover="filter:brightness(1.08);"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.7 5.8L19.5 9l-5.8 1.2L12 16l-1.7-5.8L4.5 9l5.8-1.2z"/></svg>Explain with AI</button>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1080,&quot;height&quot;:760}}">
+class Component extends DCLogic {
+  state = { phase: 'completed', uploadPct: 0, procStep: 0 };
+
+  componentDidMount() {
+    this._timers = [];
+    // auto-play the full flow shortly after load
+    this._timers.push(setTimeout(() => this.startFlow(), 700));
+  }
+  componentWillUnmount() { this._clear(); }
+  _clear() { (this._timers || []).forEach(clearTimeout); (this._intervals || []).forEach(clearInterval); this._timers = []; this._intervals = []; }
+
+  _runUpload() {
+    this.setState({ phase: 'uploading', uploadPct: 0 });
+    const iv = setInterval(() => {
+      this.setState(s => {
+        const next = s.uploadPct + (s.uploadPct < 70 ? 7 : 4);
+        if (next >= 100) { clearInterval(iv); this._timers.push(setTimeout(() => this._runProcessing(), 280)); return { uploadPct: 100 }; }
+        return { uploadPct: next };
+      });
+    }, 70);
+    this._intervals = this._intervals || []; this._intervals.push(iv);
+  }
+  _runProcessing() {
+    this.setState({ phase: 'processing', procStep: 0 });
+    const iv = setInterval(() => {
+      this.setState(s => {
+        const next = s.procStep + 1;
+        if (next > 4) { clearInterval(iv); this._timers.push(setTimeout(() => this.setState({ phase: 'completed' }), 300)); return { procStep: 4 }; }
+        return { procStep: next };
+      });
+    }, 720);
+    this._intervals = this._intervals || []; this._intervals.push(iv);
+  }
+
+  startFlow() { this._clear(); this._runUpload(); }
+  doReplay() { this._clear(); this.setState({ phase: 'upload', uploadPct: 0, procStep: 0 }); this._timers.push(setTimeout(() => this._runUpload(), 450)); }
+  retry() { this._clear(); this._runProcessing(); }
+  goUpload() { this._clear(); this.setState({ phase: 'upload', uploadPct: 0, procStep: 0 }); }
+  goUploading() { this._clear(); this.setState({ phase: 'uploading', uploadPct: 62, procStep: 0 }); }
+  goProcessing() { this._clear(); this.setState({ phase: 'processing', procStep: 2 }); }
+  goCompleted() { this._clear(); this.setState({ phase: 'completed', procStep: 4 }); }
+  goError() { this._clear(); this.setState({ phase: 'error', procStep: 1 }); }
+
+  _pill(active) {
+    const base = "appearance:none;cursor:pointer;padding:7px 12px;border-radius:9px;font-size:12.5px;font-weight:500;font-family:inherit;transition:.15s;border:1px solid ";
+    return base + (active ? "#34414a;background:#1c2125;color:#fff;" : "transparent;background:transparent;color:#7d858d;");
+  }
+
+  renderVals() {
+    const p = this.state.phase;
+    const R = React.createElement;
+
+    // ---- processing steps (conditional icons → React element) ----
+    const stepLabels = ['Reading document', 'Detecting fields', 'Extracting line items', 'Validating totals'];
+    const cur = this.state.procStep;
+    const steps = R('div', { style: { display: 'flex', flexDirection: 'column', gap: '11px' } },
+      stepLabels.map((label, i) => {
+        const done = i < cur, active = i === cur;
+        let marker;
+        if (done) {
+          marker = R('div', { key: 'm', style: { width: '20px', height: '20px', borderRadius: '50%', background: '#34d399', color: '#0c2a1f', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 } },
+            R('svg', { width: 12, height: 12, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }, R('path', { d: 'M5 13l4 4L19 7' })));
+        } else if (active) {
+          marker = R('div', { key: 'm', style: { width: '20px', height: '20px', borderRadius: '50%', border: '2.5px solid #2a2f34', borderTopColor: '#b9a4fb', flexShrink: 0, animation: 'spin .7s linear infinite' } });
+        } else {
+          marker = R('div', { key: 'm', style: { width: '20px', height: '20px', borderRadius: '50%', border: '2px solid #23282d', flexShrink: 0 } });
+        }
+        const color = done ? '#cbd0d4' : active ? '#fff' : '#646b72';
+        const weight = active ? 600 : 500;
+        return R('div', { key: i, style: { display: 'flex', alignItems: 'center', gap: '11px' } },
+          marker,
+          R('div', { style: { fontSize: '13.5px', fontWeight: weight, color } }, label),
+          active ? R('div', { style: { marginLeft: 'auto', fontSize: '11px', color: '#b9a4fb', fontFamily: "'IBM Plex Mono',monospace" } }, '···') : null
+        );
+      })
+    );
+
+    // ---- status badge ----
+    const badges = {
+      upload:     { label: 'NO FILE',    style: 'background:#1c2125;border:1px solid #2a2f34;color:#9aa1a8;', dot: 'background:#646b72;' },
+      uploading:  { label: 'UPLOADING',  style: 'background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);color:#7fb0f5;', dot: 'background:#3b82f6;animation:pulseDot 1.1s ease-in-out infinite;' },
+      processing: { label: 'PROCESSING', style: 'background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.3);color:#b9a4fb;', dot: 'background:#a78bfa;animation:pulseDot 1.1s ease-in-out infinite;' },
+      completed:  { label: 'COMPLETED',  style: 'background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.28);color:#34d399;', dot: 'background:#34d399;box-shadow:0 0 8px #34d399;' },
+      error:      { label: 'FAILED',     style: 'background:rgba(239,100,97,0.12);border:1px solid rgba(239,100,97,0.34);color:#ef6461;', dot: 'background:#ef6461;' },
+    };
+    const b = badges[p];
+
+    // ---- timeline ----
+    const dotIdle = 'background:#1c2125;border-color:#13161a;box-shadow:0 0 0 1px #2a2f34 inset;';
+    const dotBlue = 'background:#3b82f6;';
+    const dotGreen = 'background:#34d399;';
+    const dotViolet = 'background:#a78bfa;animation:pulseDot 1.1s ease-in-out infinite;';
+    const dotRed = 'background:#ef6461;';
+    const dim = 'color:#646b72;';
+    const lit = '';
+    const uploaded = (p !== 'upload');
+    const procActive = (p === 'processing');
+    const procDone = (p === 'completed');
+    const isErr = (p === 'error');
+
+    let tlFillH = '0%';
+    if (p === 'uploading') tlFillH = '8%';
+    else if (p === 'processing') tlFillH = '50%';
+    else if (p === 'completed') tlFillH = '100%';
+    else if (p === 'error') tlFillH = '50%';
+
+    return {
+      isUpload: p === 'upload',
+      isUploading: p === 'uploading',
+      isProcessing: p === 'processing',
+      isCompleted: p === 'completed',
+      isError: p === 'error',
+      showPaper: p !== 'upload',
+      showFileMeta: p !== 'upload',
+
+      previewWrapStyle: p === 'upload' ? 'background:#13161a;border-style:dashed;' : 'background:#1c2125;',
+      paperInnerStyle: p === 'uploading' ? 'filter:blur(1px);opacity:.5;' : (p === 'error' ? 'filter:grayscale(.4) brightness(.9);' : ''),
+
+      uploadBarStyle: 'width:' + this.state.uploadPct + '%',
+      uploadPctLabel: this.state.uploadPct + '%',
+      uploadSizeLabel: (75.8 * this.state.uploadPct / 100).toFixed(1) + ' / 75.8 KB',
+
+      procPctLabel: Math.min(100, Math.round(cur / 4 * 100)) + '%',
+      procBarStyle: 'width:' + Math.min(100, Math.round(cur / 4 * 100)) + '%',
+      processingSteps: steps,
+
+      badgeLabel: b.label, badgeStyle: b.style, badgeDotStyle: b.dot,
+
+      // controls
+      doReplay: () => this.doReplay(),
+      startFlow: () => this.startFlow(),
+      retry: () => this.retry(),
+      goUpload: () => this.goUpload(),
+      goUploading: () => this.goUploading(),
+      goProcessing: () => this.goProcessing(),
+      goCompleted: () => this.goCompleted(),
+      goError: () => this.goError(),
+      pillUpload: this._pill(p === 'upload'),
+      pillUploading: this._pill(p === 'uploading'),
+      pillProcessing: this._pill(p === 'processing'),
+      pillCompleted: this._pill(p === 'completed'),
+      pillError: this._pill(p === 'error'),
+
+      // timeline
+      tlFillStyle: 'height:' + tlFillH,
+      tlDot1: uploaded ? dotBlue : dotIdle,
+      tlText1: uploaded ? lit : dim,
+      tlTime1: uploaded ? '14 Jun 2026, 21:02' : 'Pending',
+      tlDot2: procDone ? dotBlue : (procActive ? dotViolet : (isErr ? dotRed : dotIdle)),
+      tlText2: (procActive || procDone || isErr) ? lit : dim,
+      tlTime2: procActive ? 'In progress…' : (procDone ? '1 attempt' : (isErr ? 'Failed · attempt 2' : 'Pending')),
+      tlDot3: procDone ? dotGreen : dotIdle,
+      tlText3: procDone ? lit : dim,
+      tlLabel3: isErr ? 'Completed' : 'Completed',
+      tlTime3: procDone ? '14 Jun 2026, 21:02' : 'Pending',
+    };
+  }
+}
+</script>
+</body>
+</html>

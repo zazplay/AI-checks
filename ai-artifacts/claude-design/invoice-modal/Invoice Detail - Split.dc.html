@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{background:#101316;font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#e8eaed;}
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:#2e343a;border-radius:6px;}
+  ::selection{background:#8b5cf6;color:#fff;}
+  @keyframes shimmer{0%{background-position:100% 0;}100%{background-position:-100% 0;}}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,0.5);}50%{box-shadow:0 0 0 7px rgba(59,130,246,0);}}
+  @keyframes scan{0%{top:-12%;opacity:0;}15%{opacity:1;}85%{opacity:1;}100%{top:112%;opacity:0;}}
+  @keyframes dotpulse{0%,80%,100%{opacity:0.25;}40%{opacity:1;}}
+  @keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:radial-gradient(1200px 600px at 50% -10%, #181d21 0%, #101316 60%);padding:48px 32px 80px;display:flex;flex-direction:column;align-items:center;">
+
+  <!-- page header -->
+  <div style="width:1000px;max-width:100%;margin-bottom:20px;">
+    <div style="font-size:19px;font-weight:600;letter-spacing:-0.01em;">Invoice details — split view</div>
+    <div style="color:#7d858d;font-size:13.5px;margin-top:4px;">Document upload, AI extraction, and result in one modal. Run the pipeline or jump to any state.</div>
+  </div>
+
+  <!-- control bar -->
+  <div style="width:1000px;max-width:100%;display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+    <div style="display:inline-flex;padding:4px;background:#15181b;border:1px solid #2a2f34;border-radius:11px;gap:3px;">
+      <button onClick="{{ goUploading }}" style="appearance:none;border:none;cursor:pointer;background:transparent;padding:0;font-family:inherit;">
+        <sc-if value="{{ isUploading }}" hint-placeholder-val="{{ false }}"><span style="display:block;font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:8px;background:#23292e;color:#e8eaed;">Uploading</span></sc-if>
+        <sc-if value="{{ notUploading }}" hint-placeholder-val="{{ true }}"><span style="display:block;font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:8px;background:transparent;color:#7d858d;">Uploading</span></sc-if>
+      </button>
+      <button onClick="{{ goProcessing }}" style="appearance:none;border:none;cursor:pointer;background:transparent;padding:0;font-family:inherit;">
+        <sc-if value="{{ isProcessing }}" hint-placeholder-val="{{ false }}"><span style="display:block;font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:8px;background:#23292e;color:#e8eaed;">Processing</span></sc-if>
+        <sc-if value="{{ notProcessing }}" hint-placeholder-val="{{ true }}"><span style="display:block;font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:8px;background:transparent;color:#7d858d;">Processing</span></sc-if>
+      </button>
+      <button onClick="{{ goCompleted }}" style="appearance:none;border:none;cursor:pointer;background:transparent;padding:0;font-family:inherit;">
+        <sc-if value="{{ isCompleted }}" hint-placeholder-val="{{ true }}"><span style="display:block;font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:8px;background:#23292e;color:#e8eaed;">Completed</span></sc-if>
+        <sc-if value="{{ notCompleted }}" hint-placeholder-val="{{ false }}"><span style="display:block;font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:8px;background:transparent;color:#7d858d;">Completed</span></sc-if>
+      </button>
+      <button onClick="{{ goFailed }}" style="appearance:none;border:none;cursor:pointer;background:transparent;padding:0;font-family:inherit;">
+        <sc-if value="{{ isFailed }}" hint-placeholder-val="{{ false }}"><span style="display:block;font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:8px;background:#23292e;color:#e8eaed;">Failed</span></sc-if>
+        <sc-if value="{{ notFailed }}" hint-placeholder-val="{{ true }}"><span style="display:block;font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:8px;background:transparent;color:#7d858d;">Failed</span></sc-if>
+      </button>
+    </div>
+    <div style="flex:1;"></div>
+    <button onClick="{{ run }}" style="appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:9px 15px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#2563eb);border:none;color:#fff;font-size:13px;font-weight:600;font-family:inherit;box-shadow:0 8px 22px -10px rgba(59,130,246,0.8);transition:.15s;" style-hover="filter:brightness(1.08);">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Run pipeline</button>
+    <button onClick="{{ fail }}" style="appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:9px 15px;border-radius:10px;background:#15181b;border:1px solid #2a2f34;color:#cbd0d4;font-size:13px;font-weight:500;font-family:inherit;transition:.15s;" style-hover="border-color:#4a3434;color:#ef8a88;">Simulate failure</button>
+  </div>
+
+  <!-- ===== MODAL ===== -->
+  <div style="width:1000px;max-width:100%;background:#15181b;border:1px solid #2a2f34;border-radius:18px;box-shadow:0 40px 100px -30px rgba(0,0,0,0.8);overflow:hidden;">
+
+    <!-- header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid #23282d;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="font-size:16px;font-weight:600;">Invoice details</div>
+        <sc-if value="{{ isUploading }}" hint-placeholder-val="{{ false }}"><div style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:999px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);color:#7fb0f5;font-size:10.5px;font-weight:600;letter-spacing:0.08em;"><span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;animation:dotpulse 1.2s infinite;"></span>UPLOADING</div></sc-if>
+        <sc-if value="{{ isProcessing }}" hint-placeholder-val="{{ false }}"><div style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:999px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);color:#7fb0f5;font-size:10.5px;font-weight:600;letter-spacing:0.08em;"><div style="width:10px;height:10px;border:2px solid rgba(127,176,245,0.4);border-top-color:#7fb0f5;border-radius:50%;animation:spin .7s linear infinite;"></div>PROCESSING</div></sc-if>
+        <sc-if value="{{ isCompleted }}" hint-placeholder-val="{{ true }}"><div style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:999px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.28);color:#34d399;font-size:10.5px;font-weight:600;letter-spacing:0.08em;"><span style="width:6px;height:6px;border-radius:50%;background:#34d399;box-shadow:0 0 8px #34d399;"></span>COMPLETED</div></sc-if>
+        <sc-if value="{{ isFailed }}" hint-placeholder-val="{{ false }}"><div style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:999px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.32);color:#f08886;font-size:10.5px;font-weight:600;letter-spacing:0.08em;"><span style="width:6px;height:6px;border-radius:50%;background:#ef4444;"></span>FAILED</div></sc-if>
+      </div>
+      <button style="appearance:none;cursor:pointer;width:32px;height:32px;border-radius:9px;background:#1c2125;border:1px solid #2a2f34;color:#9aa1a8;display:flex;align-items:center;justify-content:center;transition:.15s;" style-hover="background:#23292e;color:#e8eaed;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:340px 1fr;">
+
+      <!-- ============ LEFT RAIL ============ -->
+      <div style="padding:22px;border-right:1px solid #23282d;background:#13161a;">
+
+        <!-- document preview -->
+        <div style="position:relative;border-radius:12px;overflow:hidden;border:1px solid #2a2f34;background:#f4f2ec;box-shadow:0 12px 30px -12px rgba(0,0,0,0.6);">
+          <!-- paper -->
+          <div style="padding:16px 16px 14px;color:#2a2a28;{{ paperStyle }}">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+              <div><div style="font-size:8px;letter-spacing:0.1em;color:#9b978c;">FROM</div><div style="font-size:9px;font-weight:700;margin-top:2px;">Tinerfe Supplies S.L.</div><div style="font-size:7px;color:#8a8678;line-height:1.5;margin-top:2px;">Calle Velázquez 14<br/>38670 Adeje · Spain</div></div>
+              <div style="text-align:right;"><div style="font-size:15px;font-weight:800;color:#1d6b4a;letter-spacing:0.04em;">INVOICE</div><div style="font-size:7px;color:#8a8678;margin-top:2px;">No. INV-50923</div></div>
+            </div>
+            <div style="height:1px;background:#ddd9cd;margin:11px 0;"></div>
+            <div style="font-size:7px;color:#9b978c;">BILL TO</div>
+            <div style="font-size:8px;font-weight:600;margin-top:2px;">Greenfield Retail BV</div>
+            <div style="margin-top:11px;border:1px solid #e1ddd1;border-radius:5px;overflow:hidden;">
+              <div style="display:flex;background:#1d6b4a;color:#fff;font-size:6.5px;font-weight:600;padding:4px 7px;"><div style="flex:1;">Description</div><div style="width:34px;text-align:right;">Amount</div></div>
+              <div style="display:flex;font-size:6.5px;padding:4px 7px;border-top:1px solid #ece9df;"><div style="flex:1;">Self-service terminal touch panel</div><div style="width:34px;text-align:right;">387.36</div></div>
+              <div style="display:flex;font-size:6.5px;padding:4px 7px;border-top:1px solid #ece9df;background:#faf8f2;"><div style="flex:1;">Thermal receipt printer, 80mm</div><div style="width:34px;text-align:right;">681.38</div></div>
+              <div style="display:flex;font-size:6.5px;padding:4px 7px;border-top:1px solid #ece9df;"><div style="flex:1;">RFID reader 13.56 MHz, USB</div><div style="width:34px;text-align:right;">82.92</div></div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:14px;font-size:7px;margin-top:8px;"><span style="color:#9b978c;">TOTAL</span><span style="font-weight:700;">€1,379.44</span></div>
+          </div>
+          <!-- scan line (processing) -->
+          <sc-if value="{{ isProcessing }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;left:0;right:0;height:38px;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(96,165,250,0.35),transparent);box-shadow:0 0 18px rgba(96,165,250,0.5);animation:scan 1.8s ease-in-out infinite;"></div>
+            <div style="position:absolute;top:8px;left:8px;display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:999px;background:rgba(15,18,22,0.82);backdrop-filter:blur(4px);color:#7fb0f5;font-size:9px;font-weight:600;letter-spacing:0.04em;"><div style="width:8px;height:8px;border:1.5px solid rgba(127,176,245,0.4);border-top-color:#7fb0f5;border-radius:50%;animation:spin .7s linear infinite;"></div>SCANNING</div>
+          </sc-if>
+          <!-- uploading overlay -->
+          <sc-if value="{{ isUploading }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:0;background:rgba(16,19,22,0.55);backdrop-filter:blur(1px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
+              <div style="width:44px;height:44px;border-radius:50%;border:2px dashed rgba(127,176,245,0.5);display:flex;align-items:center;justify-content:center;color:#7fb0f5;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg></div>
+              <div style="font-size:20px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#dfe6ee;">{{ progressPct }}</div>
+            </div>
+          </sc-if>
+          <!-- failed overlay -->
+          <sc-if value="{{ isFailed }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:0;background:rgba(28,12,12,0.5);display:flex;align-items:center;justify-content:center;">
+              <div style="display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;background:rgba(15,18,22,0.85);color:#f08886;font-size:10px;font-weight:600;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>Not extracted</div>
+            </div>
+          </sc-if>
+        </div>
+
+        <!-- progress bar (uploading) -->
+        <sc-if value="{{ isUploading }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:14px;">
+            <div style="display:flex;justify-content:space-between;font-size:11.5px;color:#9aa1a8;margin-bottom:6px;"><span>Uploading…</span><span style="font-family:'IBM Plex Mono',monospace;color:#7fb0f5;">{{ progressPct }}</span></div>
+            <div style="height:7px;border-radius:999px;background:#1c2227;overflow:hidden;"><div style="height:100%;border-radius:999px;background:linear-gradient(90deg,#3b82f6,#60a5fa);width:{{ progressPct }};transition:width .25s ease;"></div></div>
+          </div>
+        </sc-if>
+
+        <!-- actions -->
+        <div style="{{ actionsRowStyle }}">
+          <button style="appearance:none;cursor:pointer;flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px;border-radius:9px;background:#1c2125;border:1px solid #2a2f34;color:#cbd0d4;font-size:12.5px;font-weight:500;font-family:inherit;transition:.15s;" style-hover="background:#23292e;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>Preview</button>
+          <button style="appearance:none;cursor:pointer;flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px;border-radius:9px;background:#1c2125;border:1px solid #2a2f34;color:#cbd0d4;font-size:12.5px;font-weight:500;font-family:inherit;transition:.15s;" style-hover="background:#23292e;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 5 5-5M5 21h14"/></svg>Download</button>
+        </div>
+        <div style="font-size:11px;color:#646b72;font-family:'IBM Plex Mono',monospace;margin-top:12px;text-align:center;">05_pdf_scanned_faded.pdf · 75.8 KB</div>
+
+        <!-- timeline -->
+        <div style="height:1px;background:#23282d;margin:18px 0;"></div>
+        <div style="position:relative;padding-left:4px;">
+          <div style="{{ lineStyle }}"></div>
+          <div style="display:flex;gap:13px;margin-bottom:18px;position:relative;">
+            <div style="{{ dot1Style }}"><sc-if value="{{ n1Check }}" hint-placeholder-val="{{ true }}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></sc-if></div>
+            <div><div style="font-size:13px;font-weight:600;">Uploaded</div><div style="font-size:11px;color:#7d858d;font-family:'IBM Plex Mono',monospace;margin-top:2px;">{{ node1Sub }}</div></div>
+          </div>
+          <div style="display:flex;gap:13px;margin-bottom:18px;position:relative;">
+            <div style="{{ dot2Style }}">
+              <sc-if value="{{ n2Spin }}" hint-placeholder-val="{{ false }}"><div style="width:11px;height:11px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;"></div></sc-if>
+              <sc-if value="{{ n2Check }}" hint-placeholder-val="{{ true }}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></sc-if>
+              <sc-if value="{{ n2X }}" hint-placeholder-val="{{ false }}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></sc-if>
+            </div>
+            <div><div style="font-size:13px;font-weight:600;">Processing</div><div style="font-size:11px;color:#7d858d;font-family:'IBM Plex Mono',monospace;margin-top:2px;">{{ node2Sub }}</div></div>
+          </div>
+          <div style="display:flex;gap:13px;position:relative;">
+            <div style="{{ dot3Style }}"><sc-if value="{{ n3Check }}" hint-placeholder-val="{{ true }}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></sc-if></div>
+            <div><div style="font-size:13px;font-weight:600;{{ node3TitleStyle }}">Completed</div><div style="font-size:11px;color:#7d858d;font-family:'IBM Plex Mono',monospace;margin-top:2px;">{{ node3Sub }}</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ RIGHT PANEL ============ -->
+      <div style="padding:22px;min-height:560px;">
+
+        <!-- UPLOADING -->
+        <sc-if value="{{ isUploading }}" hint-placeholder-val="{{ false }}">
+          <div style="height:516px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+            <div style="width:64px;height:64px;border-radius:16px;background:#13161a;border:1px solid #23282d;display:flex;align-items:center;justify-content:center;color:#7fb0f5;margin-bottom:18px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg></div>
+            <div style="font-size:17px;font-weight:600;">Uploading document…</div>
+            <div style="font-size:13px;color:#7d858d;margin-top:6px;max-width:300px;line-height:1.5;">Extraction with Claude starts automatically once the upload completes.</div>
+            <div style="width:280px;margin-top:22px;"><div style="height:8px;border-radius:999px;background:#1c2227;overflow:hidden;"><div style="height:100%;border-radius:999px;background:linear-gradient(90deg,#3b82f6,#60a5fa);width:{{ progressPct }};transition:width .25s ease;"></div></div><div style="display:flex;justify-content:space-between;font-size:11.5px;color:#9aa1a8;margin-top:8px;font-family:'IBM Plex Mono',monospace;"><span>{{ progressPct }}</span><span>75.8 KB</span></div></div>
+          </div>
+        </sc-if>
+
+        <!-- PROCESSING -->
+        <sc-if value="{{ isProcessing }}" hint-placeholder-val="{{ false }}">
+          <div style="">
+            <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:13px;background:linear-gradient(135deg,rgba(139,92,246,0.13),rgba(192,38,211,0.05));border:1px solid rgba(167,139,250,0.28);margin-bottom:20px;">
+              <div style="width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#8b5cf6,#c026d3);display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.7 5.8L19.5 9l-5.8 1.2L12 16l-1.7-5.8L4.5 9l5.8-1.2z"/></svg></div>
+              <div style="flex:1;"><div style="font-size:14px;font-weight:600;color:#e3dcf7;">Claude is reading the invoice<span style="display:inline-flex;gap:2px;margin-left:3px;"><span style="animation:dotpulse 1.4s infinite;">.</span><span style="animation:dotpulse 1.4s infinite .2s;">.</span><span style="animation:dotpulse 1.4s infinite .4s;">.</span></span></div><div style="font-size:11.5px;color:#9d92b8;font-family:'IBM Plex Mono',monospace;margin-top:2px;">Extracting fields · claude-haiku-4-5</div></div>
+            </div>
+            <div style="font-size:10.5px;font-weight:600;letter-spacing:0.1em;color:#6b7178;text-transform:uppercase;margin-bottom:12px;">Invoice info</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px 18px;">
+              <div><div style="height:9px;width:46px;border-radius:5px;background:#1d2329;margin-bottom:9px;"></div><div style="height:14px;width:80%;border-radius:6px;background:linear-gradient(90deg,#1a1e22 25%,#252d33 50%,#1a1e22 75%);background-size:200% 100%;animation:shimmer 1.4s linear infinite;"></div></div>
+              <div><div style="height:9px;width:54px;border-radius:5px;background:#1d2329;margin-bottom:9px;"></div><div style="height:14px;width:60%;border-radius:6px;background:linear-gradient(90deg,#1a1e22 25%,#252d33 50%,#1a1e22 75%);background-size:200% 100%;animation:shimmer 1.4s linear infinite .15s;"></div></div>
+              <div><div style="height:9px;width:64px;border-radius:5px;background:#1d2329;margin-bottom:9px;"></div><div style="height:14px;width:55%;border-radius:6px;background:linear-gradient(90deg,#1a1e22 25%,#252d33 50%,#1a1e22 75%);background-size:200% 100%;animation:shimmer 1.4s linear infinite .3s;"></div></div>
+              <div><div style="height:9px;width:48px;border-radius:5px;background:#1d2329;margin-bottom:9px;"></div><div style="height:14px;width:58%;border-radius:6px;background:linear-gradient(90deg,#1a1e22 25%,#252d33 50%,#1a1e22 75%);background-size:200% 100%;animation:shimmer 1.4s linear infinite .45s;"></div></div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:22px;">
+              <div style="flex:1;height:62px;border-radius:11px;background:linear-gradient(90deg,#13161a 25%,#1c2228 50%,#13161a 75%);background-size:200% 100%;animation:shimmer 1.4s linear infinite;border:1px solid #1e2327;"></div>
+              <div style="flex:1;height:62px;border-radius:11px;background:linear-gradient(90deg,#13161a 25%,#1c2228 50%,#13161a 75%);background-size:200% 100%;animation:shimmer 1.4s linear infinite .2s;border:1px solid #1e2327;"></div>
+              <div style="flex:1.2;height:62px;border-radius:11px;background:linear-gradient(90deg,#13161a 25%,#1c2228 50%,#13161a 75%);background-size:200% 100%;animation:shimmer 1.4s linear infinite .4s;border:1px solid #1e2327;"></div>
+            </div>
+            <div style="font-size:10.5px;font-weight:600;letter-spacing:0.1em;color:#6b7178;text-transform:uppercase;margin:24px 0 10px;">Line items</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="height:40px;border-radius:9px;background:linear-gradient(90deg,#13161a 25%,#1c2228 50%,#13161a 75%);background-size:200% 100%;animation:shimmer 1.4s linear infinite;border:1px solid #1e2327;"></div>
+              <div style="height:40px;border-radius:9px;background:linear-gradient(90deg,#13161a 25%,#1c2228 50%,#13161a 75%);background-size:200% 100%;animation:shimmer 1.4s linear infinite .15s;border:1px solid #1e2327;"></div>
+              <div style="height:40px;border-radius:9px;background:linear-gradient(90deg,#13161a 25%,#1c2228 50%,#13161a 75%);background-size:200% 100%;animation:shimmer 1.4s linear infinite .3s;border:1px solid #1e2327;"></div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- FAILED -->
+        <sc-if value="{{ isFailed }}" hint-placeholder-val="{{ false }}">
+          <div style="">
+            <div style="display:flex;align-items:flex-start;gap:13px;padding:16px;border-radius:13px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);">
+              <div style="width:36px;height:36px;border-radius:10px;background:rgba(239,68,68,0.14);display:flex;align-items:center;justify-content:center;color:#f08886;flex-shrink:0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg></div>
+              <div style="flex:1;"><div style="font-size:15px;font-weight:600;color:#f3b4b3;">Extraction failed</div><div style="font-size:13px;color:#bda3a3;margin-top:4px;line-height:1.55;">Claude returned malformed JSON while parsing this scanned document. The file uploaded successfully — only the data extraction step failed.</div></div>
+            </div>
+            <div style="margin-top:16px;padding:14px 16px;background:#13161a;border:1px solid #23282d;border-radius:12px;">
+              <div style="font-size:10.5px;font-weight:600;letter-spacing:0.08em;color:#6b7178;text-transform:uppercase;margin-bottom:10px;">Diagnostics</div>
+              <div style="display:flex;justify-content:space-between;gap:14px;white-space:nowrap;font-size:12.5px;padding:4px 0;"><span style="color:#9aa1a8;">Attempts</span><span style="font-family:'IBM Plex Mono',monospace;">{{ attemptText }}</span></div>
+              <div style="display:flex;justify-content:space-between;gap:14px;white-space:nowrap;font-size:12.5px;padding:4px 0;"><span style="color:#9aa1a8;">Error code</span><span style="font-family:'IBM Plex Mono',monospace;color:#f08886;">E_PARSE_JSON</span></div>
+              <div style="display:flex;justify-content:space-between;gap:14px;white-space:nowrap;font-size:12.5px;padding:4px 0;"><span style="color:#9aa1a8;">Stage</span><span style="font-family:'IBM Plex Mono',monospace;">field extraction</span></div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:18px;">
+              <button onClick="{{ retry }}" style="appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#2563eb);border:none;color:#fff;font-size:13px;font-weight:600;font-family:inherit;box-shadow:0 8px 22px -10px rgba(59,130,246,0.8);transition:.15s;" style-hover="filter:brightness(1.08);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v4h-4"/></svg>Retry extraction</button>
+              <button style="appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;background:#1c2125;border:1px solid #2a2f34;color:#cbd0d4;font-size:13px;font-weight:500;font-family:inherit;transition:.15s;" style-hover="background:#23292e;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>Re-upload</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- COMPLETED -->
+        <sc-if value="{{ isCompleted }}" hint-placeholder-val="{{ true }}">
+          <div style="">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <div style="font-size:13px;font-weight:600;color:#cbd0d4;">Extracted data</div>
+              <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.25);color:#b9a4fb;font-size:10px;font-weight:600;letter-spacing:0.05em;"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.7 5.8L19.5 9l-5.8 1.2L12 16l-1.7-5.8L4.5 9l5.8-1.2z"/></svg>claude-haiku-4-5</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 18px;">
+              <div><div style="font-size:10px;font-weight:600;letter-spacing:0.1em;color:#6b7178;text-transform:uppercase;margin-bottom:4px;">Vendor</div><div style="font-size:14px;font-weight:500;">Tinerfe Supplies S.L.</div></div>
+              <div><div style="font-size:10px;font-weight:600;letter-spacing:0.1em;color:#6b7178;text-transform:uppercase;margin-bottom:4px;">Invoice #</div><div style="font-size:14px;font-weight:500;font-family:'IBM Plex Mono',monospace;">INV-50923</div></div>
+              <div><div style="font-size:10px;font-weight:600;letter-spacing:0.1em;color:#6b7178;text-transform:uppercase;margin-bottom:4px;">Invoice date</div><div style="font-size:14px;font-weight:500;">25 Oct 2025</div></div>
+              <div><div style="font-size:10px;font-weight:600;letter-spacing:0.1em;color:#6b7178;text-transform:uppercase;margin-bottom:4px;">Due date</div><div style="font-size:14px;font-weight:500;">08 Nov 2025</div></div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:18px;">
+              <div style="flex:1;padding:11px 13px;background:#13161a;border:1px solid #23282d;border-radius:11px;"><div style="font-size:10px;font-weight:600;letter-spacing:0.06em;color:#6b7178;text-transform:uppercase;">Subtotal</div><div style="font-size:15px;font-weight:600;font-family:'IBM Plex Mono',monospace;margin-top:4px;">€1,289.20</div></div>
+              <div style="flex:1;padding:11px 13px;background:#13161a;border:1px solid #23282d;border-radius:11px;"><div style="font-size:10px;font-weight:600;letter-spacing:0.06em;color:#6b7178;text-transform:uppercase;">Tax</div><div style="font-size:15px;font-weight:600;font-family:'IBM Plex Mono',monospace;margin-top:4px;">€90.24</div></div>
+              <div style="flex:1.2;padding:11px 13px;background:linear-gradient(135deg,rgba(52,211,153,0.13),rgba(52,211,153,0.03));border:1px solid rgba(52,211,153,0.3);border-radius:11px;"><div style="font-size:10px;font-weight:600;letter-spacing:0.06em;color:#5fcfa0;text-transform:uppercase;">Total EUR</div><div style="font-size:18px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#7fe7b8;margin-top:3px;">€1,379.44</div></div>
+            </div>
+            <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;color:#6b7178;text-transform:uppercase;margin:20px 0 9px;">Line items (5)</div>
+            <div style="border:1px solid #23282d;border-radius:11px;overflow:hidden;">
+              <div style="display:grid;grid-template-columns:1fr 36px 84px;gap:6px;padding:9px 14px;background:#1b1f23;font-size:10.5px;font-weight:600;color:#9aa1a8;"><div>Description</div><div style="text-align:right;">Qty</div><div style="text-align:right;">Amount</div></div>
+              <div style="display:grid;grid-template-columns:1fr 36px 84px;gap:6px;padding:10px 14px;border-top:1px solid #1e2327;font-size:12.5px;"><div>Self-service terminal touch panel 15.6"</div><div style="text-align:right;font-family:'IBM Plex Mono',monospace;color:#9aa1a8;">2</div><div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;">€387.36</div></div>
+              <div style="display:grid;grid-template-columns:1fr 36px 84px;gap:6px;padding:10px 14px;border-top:1px solid #1e2327;font-size:12.5px;background:#13161a;"><div>Stainless steel mounting bracket, 120mm</div><div style="text-align:right;font-family:'IBM Plex Mono',monospace;color:#9aa1a8;">6</div><div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;">€43.38</div></div>
+              <div style="display:grid;grid-template-columns:1fr 36px 84px;gap:6px;padding:10px 14px;border-top:1px solid #1e2327;font-size:12.5px;"><div>Thermal receipt printer, 80mm</div><div style="text-align:right;font-family:'IBM Plex Mono',monospace;color:#9aa1a8;">7</div><div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;">€681.38</div></div>
+              <div style="display:grid;grid-template-columns:1fr 36px 84px;gap:6px;padding:10px 14px;border-top:1px solid #1e2327;font-size:12.5px;background:#13161a;"><div>Cable gland set M12:M20 (assorted, 50 pcs)</div><div style="text-align:right;font-family:'IBM Plex Mono',monospace;color:#9aa1a8;">8</div><div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;">€94.16</div></div>
+              <div style="display:grid;grid-template-columns:1fr 36px 84px;gap:6px;padding:10px 14px;border-top:1px solid #1e2327;font-size:12.5px;"><div>RFID reader 13.56 MHz, USB</div><div style="text-align:right;font-family:'IBM Plex Mono',monospace;color:#9aa1a8;">4</div><div style="text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;">€82.92</div></div>
+            </div>
+            <button style="appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;margin-top:18px;padding:10px 16px;border-radius:10px;background:linear-gradient(135deg,#8b5cf6,#c026d3);border:none;color:#fff;font-size:13px;font-weight:600;font-family:inherit;box-shadow:0 8px 24px -8px rgba(168,85,247,0.6);transition:.15s;" style-hover="filter:brightness(1.08);"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.7 5.8L19.5 9l-5.8 1.2L12 16l-1.7-5.8L4.5 9l5.8-1.2z"/></svg>Explain with AI</button>
+          </div>
+        </sc-if>
+
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { phase: 'completed', progress: 100, attempt: 1 };
+  timers = [];
+  clear() { this.timers.forEach(t => { clearTimeout(t); clearInterval(t); }); this.timers = []; }
+  componentWillUnmount() { this.clear(); }
+  go(phase) {
+    this.clear();
+    const progress = phase === 'uploading' ? 0 : (phase === 'completed' ? 100 : 100);
+    this.setState({ phase, progress });
+  }
+  run() {
+    this.clear();
+    this.setState({ phase: 'uploading', progress: 0, attempt: 1 });
+    [16, 34, 55, 72, 88, 100].forEach((p, i) => {
+      this.timers.push(setTimeout(() => this.setState({ progress: p }), 260 * (i + 1)));
+    });
+    this.timers.push(setTimeout(() => this.setState({ phase: 'processing' }), 260 * 6 + 450));
+    this.timers.push(setTimeout(() => this.setState({ phase: 'completed', progress: 100 }), 260 * 6 + 450 + 2800));
+  }
+  fail() {
+    this.clear();
+    this.setState({ phase: 'uploading', progress: 0, attempt: 1 });
+    [22, 48, 74, 100].forEach((p, i) => {
+      this.timers.push(setTimeout(() => this.setState({ progress: p }), 240 * (i + 1)));
+    });
+    this.timers.push(setTimeout(() => this.setState({ phase: 'processing' }), 240 * 4 + 400));
+    this.timers.push(setTimeout(() => this.setState({ phase: 'failed', attempt: 1 }), 240 * 4 + 400 + 2400));
+  }
+  retry() {
+    this.clear();
+    const next = this.state.attempt + 1;
+    this.setState({ phase: 'processing', attempt: next });
+    this.timers.push(setTimeout(() => this.setState({ phase: 'completed', progress: 100 }), 2600));
+  }
+  renderVals() {
+    const p = this.state.phase;
+    const isUploading = p === 'uploading', isProcessing = p === 'processing', isCompleted = p === 'completed', isFailed = p === 'failed';
+    const pct = Math.round(this.state.progress) + '%';
+
+    // control segments
+    const segBase = "appearance:none;border:none;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:8px;transition:.15s;background:transparent;color:#7d858d;";
+    const segOn = "appearance:none;border:none;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:8px;transition:.15s;background:#23292e;color:#e8eaed;";
+
+    // timeline dots
+    const dotBase = "width:22px;height:22px;border-radius:50%;border:3px solid #13161a;flex-shrink:0;z-index:1;display:flex;align-items:center;justify-content:center;color:#fff;margin-top:1px;";
+    const gray = "background:#2a2f34;color:#646b72;", blue = "background:#3b82f6;", green = "background:#34d399;color:#0c2a1f;", red = "background:#ef4444;";
+    const pulse = "animation:pulse 1.6s ease-in-out infinite;";
+    let dot1, dot2, dot3, lineGrad;
+    if (isUploading) { dot1 = dotBase + blue + pulse; dot2 = dotBase + gray; dot3 = dotBase + gray; lineGrad = "linear-gradient(#3b82f6,#2a2f34)"; }
+    else if (isProcessing) { dot1 = dotBase + blue; dot2 = dotBase + blue + pulse; dot3 = dotBase + gray; lineGrad = "linear-gradient(#3b82f6,#2a2f34)"; }
+    else if (isCompleted) { dot1 = dotBase + blue; dot2 = dotBase + blue; dot3 = dotBase + green; lineGrad = "linear-gradient(#3b82f6,#34d399)"; }
+    else { dot1 = dotBase + blue; dot2 = dotBase + red; dot3 = dotBase + gray; lineGrad = "linear-gradient(#3b82f6,#ef4444)"; }
+    const lineStyle = "position:absolute;left:14px;top:6px;bottom:18px;width:2px;background:" + lineGrad + ";";
+
+    return {
+      isUploading, isProcessing, isCompleted, isFailed,
+      notUploading: !isUploading, notProcessing: !isProcessing, notCompleted: !isCompleted, notFailed: !isFailed,
+      progressPct: pct,
+      attemptText: this.state.attempt + " of 3",
+      // controls
+      segUploadingStyle: isUploading ? segOn : segBase,
+      segProcessingStyle: isProcessing ? segOn : segBase,
+      segCompletedStyle: isCompleted ? segOn : segBase,
+      segFailedStyle: isFailed ? segOn : segBase,
+      goUploading: () => this.go('uploading'),
+      goProcessing: () => this.go('processing'),
+      goCompleted: () => this.go('completed'),
+      goFailed: () => this.setState({ phase: 'failed', attempt: 1 }),
+      run: () => this.run(),
+      fail: () => this.fail(),
+      retry: () => this.retry(),
+      // preview
+      paperStyle: isUploading ? "filter:blur(1.5px);opacity:0.7;" : (isFailed ? "filter:grayscale(0.5);opacity:0.7;" : ""),
+      actionsRowStyle: "display:flex;gap:8px;margin-top:14px;" + (isCompleted ? "" : "opacity:0.4;pointer-events:none;"),
+      // timeline
+      dot1Style: dot1, dot2Style: dot2, dot3Style: dot3, lineStyle,
+      n1Check: !isUploading,
+      n2Spin: isProcessing,
+      n2Check: isCompleted,
+      n2X: isFailed,
+      n3Check: isCompleted,
+      node1Sub: isUploading ? ("uploading " + pct) : "14 Jun 2026, 21:02",
+      node2Sub: isUploading ? "pending" : (isProcessing ? "extracting…" : (isFailed ? ("failed · attempt " + this.state.attempt) : "1 attempt")),
+      node3Sub: isCompleted ? "14 Jun 2026, 21:02" : (isFailed ? "blocked" : "pending"),
+      node3TitleStyle: isCompleted ? "" : "color:#646b72;",
+    };
+  }
+}
+</script>
+</body>
+</html>
